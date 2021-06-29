@@ -4,10 +4,9 @@ int myled::ledPin=-1;
 bool myled::activeHigh=false;
 bool myled::stateOn=false;
 
-void myled::init (int Pin,bool ActiveHigh){
+void myled::init (int Pin){
     pinMode(Pin,OUTPUT);
     ledPin = Pin;
-    activeHigh = ActiveHigh; 
     stateOn=false;   
 }
 
@@ -23,10 +22,12 @@ void myled::off(){
 }
 
 void myled::blink(){
-    for(int i=0;i<3;i++)
+    for(int i=0;i<5;i++)
     {
         on();
-        vTaskDelay(500);
+        vTaskDelay(100);
         off();
+        vTaskDelay(100);
+
     }
 }

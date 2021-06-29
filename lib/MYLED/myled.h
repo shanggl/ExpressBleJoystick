@@ -10,7 +10,7 @@ private:
 
 
 public:
-    static void init(int Pin,bool activeHigh=true);
+    static void init(int Pin);
     static void blink();
     static void on();
     static void off();

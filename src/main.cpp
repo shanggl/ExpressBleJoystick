@@ -39,7 +39,7 @@ void setup() {
   wifiConfig.begin();  
   Serial.println("begin:setup ===================== ");
 
-  led.init(GPIO_PIN_LED,false);
+  led.init(GPIO_PIN_LED);
   button.init(GPIO_BUTTON_BOOT_PIN,true);
   button.buttonShortPress=&buttonShortDown;
   button.buttonLongPress=&buttonLongDown;
