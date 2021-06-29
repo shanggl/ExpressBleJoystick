@@ -24,10 +24,15 @@ void myled::off(){
 void myled::blink(){
     for(int i=0;i<5;i++)
     {
-        on();
-        vTaskDelay(100);
-        off();
-        vTaskDelay(100);
+        if (stateOn)
+        {
+            /* code */
+            off();
+        }
+        else{
+            on();
+        }        
+        vTaskDelay(100/portTICK_RATE_MS);
 
     }
 }

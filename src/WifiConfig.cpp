@@ -36,7 +36,7 @@ void WifiConfig::handleWifiEvent(void *){
     int count=1;
 while(1){
     Serial.printf("tiko tiko [%d]\n",count*10);
-    vTaskDelay(count*10);
+    vTaskDelay(count*10/portTICK_RATE_MS);
     count++; 
     }
 
