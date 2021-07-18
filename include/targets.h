@@ -21,7 +21,7 @@
 //make shure give the right pin  13
 #define GPIO_PIN_RCSIGNAL_RX 13
 #ifdef USE_TTL_COM
-    #define GPIO_PIN_RCSIGNAL_TX 13
-#else
     #define GPIO_PIN_RCSIGNAL_TX 12
+#else
+    #define GPIO_PIN_RCSIGNAL_TX 13
 #endif

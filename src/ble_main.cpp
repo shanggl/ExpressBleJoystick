@@ -32,7 +32,7 @@ CRSF crsf;
 MSP msp;
 
 bool busyTransmitting=false;
-long LuaLastUpdated;
+long LuaLastUpdated=0;
 
 //call back mark data need send to ble 
 void ICACHE_RAM_ATTR SendRCdataToBLE()
@@ -43,6 +43,7 @@ void ICACHE_RAM_ATTR SendRCdataToBLE()
 
 void ICACHE_RAM_ATTR ParamUpdateReq()
 {
+  Serial.println("update params recived from lua");
   UpdateParamReq = true;
   led.blink();
 }
@@ -227,9 +228,9 @@ void ICACHE_RAM_ATTR ProcessTLMpacket()
         crsf.LinkStatistics.uplink_RSSI_2 = 60;
         crsf.LinkStatistics.uplink_SNR = 100;
         crsf.LinkStatistics.uplink_Link_quality = 100;
-        crsf.LinkStatistics.uplink_TX_Power = 13 ;
+        crsf.LinkStatistics.uplink_TX_Power = 3 ;
         crsf.LinkStatistics.downlink_SNR = 100;
-        crsf.LinkStatistics.downlink_RSSI = 100;
+        crsf.LinkStatistics.downlink_RSSI = 60;
         crsf.LinkStatistics.downlink_Link_quality =100; // +1 fixes rounding issues with filter and makes it consistent with RX LQ Calculation
         crsf.LinkStatistics.rf_Mode = 3;
 
@@ -272,7 +273,7 @@ void loop() {
 
   if (BLEjoystickActive && BLEjoystickRefresh)
     {
-      HandleUpdateParameter();
+      // HandleUpdateParameter();
       BluetoothJoystickSendReport();
       BLEjoystickRefresh = false;
      }
@@ -309,6 +310,7 @@ void loop() {
    * is elapsed. This keeps handset happy dispite of the telemetry ratio */
   if ((connectionState == connected) && (LastTLMpacketRecvMillis != 0) &&
       (now >= (uint32_t)(TLM_REPORT_INTERVAL_MS + TLMpacketReported))) {
+    Serial.println("sent link statics to Tx");
     crsf.sendLinkStatisticsToTX();
     TLMpacketReported = now;
   }
