@@ -22,7 +22,7 @@ void myled::off(){
 }
 
 void myled::blink(){
-    for(int i=0;i<5;i++)
+    for(int i=0;i<4;i++)
     {
         if (stateOn)
         {
@@ -32,7 +32,7 @@ void myled::blink(){
         else{
             on();
         }        
-        vTaskDelay(100/portTICK_RATE_MS);
+        vTaskDelay(400/portTICK_RATE_MS);
 
     }
 }
