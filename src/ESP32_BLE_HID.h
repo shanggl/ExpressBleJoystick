@@ -19,13 +19,15 @@ extern CRSF crsf;
 #define enableRY true
 #define enableSlider1 true
 #define enableSlider2 true
-#define enableRudder true
-#define enableThrottle true
+#define enableRudder false
+#define enableThrottle false
 #define enableAccelerator false
 #define enableBrake false
 #define enableSteering false
 
-BleGamepad bleGamepad("ExpressLRS-Joystick", "ELRS", 100);
+
+//蓝牙名称，厂商，电量
+BleGamepad bleGamepad("ExpressLRS-Joystick", "EMSR", 100);
 
 void BluetoothJoystickBegin()
 {
@@ -57,13 +59,13 @@ void BluetoothJoystickUpdateValues()
         }
 
         bleGamepad.setX(data[0]);
-        bleGamepad.setY(-data[1]);
-        bleGamepad.setRudder(data[2]);
-        bleGamepad.setThrottle(data[3]);
+        bleGamepad.setY(-data[1]);//不知道为啥，反正要反过来
+        bleGamepad.setRX(data[2]);
+        bleGamepad.setRY(data[3]);
         bleGamepad.setSlider1(data[4]);
         bleGamepad.setSlider2(data[5]);
-        bleGamepad.setRX(data[6]);
-        bleGamepad.setRY(data[7]);
+        bleGamepad.setZ(data[6]);
+        bleGamepad.setRZ(data[7]);
     }
     // process 
 }

@@ -23,6 +23,7 @@ uint8_t luaCommitPacket[7] = {(uint8_t)0xFE, thisCommit[0], thisCommit[1], thisC
 #ifndef TLM_REPORT_INTERVAL_MS
 #define TLM_REPORT_INTERVAL_MS 320LU // Default to 320ms
 #endif
+#define BLE_UPDATE_INTERVL_US 4000// defalut to 250hz
 
 volatile uint32_t LastTLMpacketRecvMillis = 0;
 uint32_t TLMpacketReported = 0;
@@ -259,14 +260,14 @@ void setup() {
 //init ble joy stick
   BluetoothJoystickBegin();
   hwTimer.callbackTock = &SendRCdataToBLE;
-  hwTimer.updateInterval(8000);//125hz
+  hwTimer.updateInterval(BLE_UPDATE_INTERVL_US);//250hz
 
 
   crsf.RCdataCallback = &BluetoothJoystickUpdateValues;
   crsf.connected = &UARTconnected; // it will auto init when it detects UART connection
   crsf.disconnected = &UARTdisconnected;
   crsf.RecvParameterUpdate = &ParamUpdateReq;
-  crsf.setSyncParams(8000); // 125hz
+  crsf.setSyncParams(BLE_UPDATE_INTERVL_US); // 250hz
 
 
 //to do : using the ble state for status; 
