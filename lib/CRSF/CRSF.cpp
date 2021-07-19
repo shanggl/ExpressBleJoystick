@@ -652,7 +652,6 @@ void ICACHE_RAM_ATTR CRSF::handleUARTin()
                 {
                     Serial.println("UART CRC failure");
                     // cleanup input buffer
-                    Serial.printf("input crc %d  calc crc %d",inChar,CalculatedCRC);
                     flush_port_input();
                     BadPktsCount++;
                 }

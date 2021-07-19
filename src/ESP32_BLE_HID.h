@@ -33,6 +33,7 @@ void BluetoothJoystickBegin()
     Serial.println("Starting BLE Joystick!");
     bleGamepad.setControllerType(CONTROLLER_TYPE_MULTI_AXIS);
     bleGamepad.begin(numOfButtons, numOfHatSwitches, enableX, enableY, enableZ, enableRZ, enableRX, enableRY, enableSlider1, enableSlider2, enableRudder, enableThrottle, enableAccelerator, enableBrake, enableSteering);
+    bleGamepad.setAutoReport(false);   //This is true by default
 }
 
 void BluetoothJoystickSendReport()
@@ -47,6 +48,7 @@ void BluetoothJoystickUpdateValues()
 {
     if (bleGamepad.isConnected())
     {
+        // Serial.println("crsf update ble values");
         int16_t data[sizeof(crsf.ChannelDataIn)] = {0};
 
         for (uint8_t i = 0; i < 9; i++)

@@ -4,6 +4,8 @@
 #include "ESP32_BLE_HID.h"
 #include "hwTimer.h"
 #include "common.h"
+
+
 //esp32 on board led 2
 myled led;
 bool BLEjoystickActive = false;
@@ -11,7 +13,7 @@ volatile bool BLEjoystickRefresh = false;
 bool UpdateParamReq =false; 
 
 // for lua 
-const uint8_t thisCommit[6] = {1,2,3,3,4,5};
+const uint8_t thisCommit[6] = {1,2,3,4,5,6};
 uint8_t luaCommitPacket[7] = {(uint8_t)0xFE, thisCommit[0], thisCommit[1], thisCommit[2], thisCommit[3], thisCommit[4], thisCommit[5]};
 
 //// CONSTANTS ////
@@ -34,11 +36,13 @@ MSP msp;
 bool busyTransmitting=false;
 long LuaLastUpdated=0;
 
+TaskHandle_t SendBleTask;
+
 //call back mark data need send to ble 
 void ICACHE_RAM_ATTR SendRCdataToBLE()
 {
-  BLEjoystickRefresh = true;
-  led.blink();
+  // Serial.println("hw timer tiko \t send data to ble ");
+  BLEjoystickRefresh = true;   
 }
 
 void ICACHE_RAM_ATTR ParamUpdateReq()
@@ -53,17 +57,6 @@ void ICACHE_RAM_ATTR ParamUpdateReq()
 //lua 脚本读取当前配置，备用
 void sendLuaParams()
 {
-/*
- (uint8_t)(InBindingMode | (webUpdateMode << 1)),
-  (uint8_t)ExpressLRS_currAirRate_Modparams->enum_rate,
-  (uint8_t)(ExpressLRS_currAirRate_Modparams->TLMinterval),
-  (uint8_t)(POWERMGNT.currPower()),
-  (uint8_t)Regulatory_Domain_Index,
-  (uint8_t)crsf.BadPktsCountResult,
-  (uint8_t)((crsf.GoodPktsCountResult & 0xFF00) >> 8),
-  (uint8_t)(crsf.GoodPktsCountResult & 0xFF),
-  (uint8_t)LUA_VERSION};
-*/
   Serial.println("begin send lua pong response ");
   uint8_t luaParams[] = {0xFF,
                          (uint8_t)(0x00),//webupdate|bind mode
@@ -160,12 +153,12 @@ void HandleUpdateParameter()
     if (crsf.ParameterUpdateData[1] == 1)
     {
       Serial.println("ble request from lua");
-      BluetoothJoystickBegin();
-      hwTimer.callbackTock = &SendRCdataToBLE;
-      crsf.setSyncParams(8000); // 125hz
-      hwTimer.updateInterval(8000);
-      crsf.RCdataCallback = &BluetoothJoystickUpdateValues;
-      BLEjoystickActive = true; 
+      // BluetoothJoystickBegin();
+      // hwTimer.callbackTock = &SendRCdataToBLE;
+      // crsf.setSyncParams(8000); // 125hz
+      // hwTimer.updateInterval(8000);
+      // crsf.RCdataCallback = &BluetoothJoystickUpdateValues;
+      // BLEjoystickActive = true; 
     }
     break;
 
@@ -186,13 +179,14 @@ void HandleUpdateParameter()
   UpdateParamReq = false;
 }
 
-
+//串口断开
 void UARTdisconnected()
 {
   hwTimer.stop();
   led.off();
 }
 
+//串口连接上
 void UARTconnected()
 {
 
@@ -208,6 +202,7 @@ void UARTconnected()
   led.on();
 }
 
+//计算连接质量，返回给遥控
 void ICACHE_RAM_ATTR ProcessTLMpacket()
 {//todo 根据蓝牙链接情况， 设置链接
 
@@ -224,13 +219,13 @@ void ICACHE_RAM_ATTR ProcessTLMpacket()
 //do fake link statics
    {
       // RSSI received is signed, proper polarity (negative value = -dBm)
-        crsf.LinkStatistics.uplink_RSSI_1 = 60;
-        crsf.LinkStatistics.uplink_RSSI_2 = 60;
+        crsf.LinkStatistics.uplink_RSSI_1 = 100;
+        crsf.LinkStatistics.uplink_RSSI_2 = 100;
         crsf.LinkStatistics.uplink_SNR = 100;
         crsf.LinkStatistics.uplink_Link_quality = 100;
         crsf.LinkStatistics.uplink_TX_Power = 3 ;
         crsf.LinkStatistics.downlink_SNR = 100;
-        crsf.LinkStatistics.downlink_RSSI = 60;
+        crsf.LinkStatistics.downlink_RSSI = 100;
         crsf.LinkStatistics.downlink_Link_quality =100; // +1 fixes rounding issues with filter and makes it consistent with RX LQ Calculation
         crsf.LinkStatistics.rf_Mode = 3;
 
@@ -238,17 +233,21 @@ void ICACHE_RAM_ATTR ProcessTLMpacket()
 
 }
 
+
+//原接受完成callback
 void ICACHE_RAM_ATTR RXdoneISR()
 {
   ProcessTLMpacket();
   busyTransmitting = false;
 }
 
+//原发射完成callback
 void ICACHE_RAM_ATTR TXdoneISR()
 {
   busyTransmitting = false;
 }
 
+//初始化
 void setup() {
   // put your setup code here, to run once:
 
@@ -259,24 +258,43 @@ void setup() {
  
 //init ble joy stick
   BluetoothJoystickBegin();
+  hwTimer.callbackTock = &SendRCdataToBLE;
+  hwTimer.updateInterval(8000);//125hz
 
+
+  crsf.RCdataCallback = &BluetoothJoystickUpdateValues;
   crsf.connected = &UARTconnected; // it will auto init when it detects UART connection
   crsf.disconnected = &UARTdisconnected;
   crsf.RecvParameterUpdate = &ParamUpdateReq;
-  crsf.Begin();
+  crsf.setSyncParams(8000); // 125hz
+
+
+//to do : using the ble state for status; 
+//this is a init version
   connectionState = connected;
+  BLEjoystickActive = true; 
+
+
+//begin whole world!
+  hwTimer.init();
+  crsf.Begin();
+
 }
 
 void loop() {
  // put your main code here, to run repeatedly:
   uint32_t now = millis();
 
+//发送数据给蓝牙，定时器会定时打开发送标识 BLEjoystickRefresh
   if (BLEjoystickActive && BLEjoystickRefresh)
     {
       // HandleUpdateParameter();
+      // Serial.println("refresh channels data to ble joystick");
       BluetoothJoystickSendReport();
       BLEjoystickRefresh = false;
      }
+
+//处理lua脚本的设置请求，预留以后用
   if (UpdateParamReq){
     HandleUpdateParameter();
   }
@@ -306,6 +324,10 @@ void loop() {
     }
   }
 
+
+  // update tlm data for crsf  to tx 
+    RXdoneISR();
+
   /* Send TLM updates to handset if connected + reporting period
    * is elapsed. This keeps handset happy dispite of the telemetry ratio */
   if ((connectionState == connected) && (LastTLMpacketRecvMillis != 0) &&
@@ -313,11 +335,7 @@ void loop() {
     Serial.println("sent link statics to Tx");
     crsf.sendLinkStatisticsToTX();
     TLMpacketReported = now;
-  }
-
-  // send tlm back to tx 
-  RXdoneISR();
-
+  } 
 
 }
 
